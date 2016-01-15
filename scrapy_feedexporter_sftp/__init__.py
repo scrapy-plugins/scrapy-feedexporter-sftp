@@ -1,7 +1,7 @@
 import paramiko
 
 from posixpath import dirname
-from six.moves.urllib.parse import urlparse
+from six.moves.urllib.parse import urlparse, unquote_plus
 from scrapy.extensions.feedexport import BlockingFeedStorage
 
 
@@ -26,8 +26,8 @@ class SFTPFeedStorage(BlockingFeedStorage):
         u = urlparse(uri)
         self.host = u.hostname
         self.port = int(u.port or "22")
-        self.username = u.username
-        self.password = u.password
+        self.username = unquote_plus(u.username)
+        self.password = unquote_plus(u.password)
         self.path = u.path
 
     def _store_in_thread(self, file):

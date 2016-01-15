@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='scrapy-feedexporter-sftp',
-    version='1.0.',
+    version='1.0.4',
     url='https://github.com/scrapy-plugins/scrapy-feedexporter-sftp',
     description=(
         'Scrapy extension Feed Exporter Storage Backend to export items to an '
