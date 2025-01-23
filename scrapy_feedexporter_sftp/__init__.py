@@ -22,7 +22,7 @@ def sftp_makedirs(sftp, path):
 
 
 class SFTPFeedStorage(BlockingFeedStorage):
-    def __init__(self, uri, feed_options: None):
+    def __init__(self, uri, feed_options=None):
         u = urlparse(uri)
         self.host = u.hostname
         self.port = int(u.port or "22")
