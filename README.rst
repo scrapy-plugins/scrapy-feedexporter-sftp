@@ -26,12 +26,3 @@ Add a ``FEED_STORAGES`` to your Scrapy settings::
 Define your ``FEED_URI`` in Scrapy settings::
 
     FEED_URI = "sftp://user:password@some.server/some/path/to/a/file"
-
-Testing scrapy-feedexporter-sftp
-================================
-
-Install an ssh server, create a user and run::
-
-    export FEEDTEST_SFTP_URI='sftp://user:password@localhost/some/path/to/a/file'
-    export FEEDTEST_SFTP_PATH='/some/path/to/a/file'
-    tox

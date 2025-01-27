@@ -1,2 +1,0 @@
-Scrapy>=1.0.3
-paramiko>=1.16.0

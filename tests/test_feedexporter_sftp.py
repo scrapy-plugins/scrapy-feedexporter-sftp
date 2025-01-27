@@ -1,36 +1,88 @@
-import os
-import unittest
-
 from io import BytesIO
+from logging import getLogger
+from pathlib import Path
+from subprocess import TimeoutExpired
+
+from pytest_twisted import ensureDeferred
 from scrapy import Spider
 from scrapy.extensions.feedexport import IFeedStorage
-from twisted.internet import defer
+from scrapy.utils.test import get_crawler
+from twisted.trial.unittest import TestCase
 from zope.interface.verify import verifyObject
 
 from scrapy_feedexporter_sftp import SFTPFeedStorage
 
+from . import build_from_crawler
 
-class SFTPFeedStorageTest(unittest.TestCase):
+logger = getLogger(__name__)
 
-    def test_store(self):
-        uri = os.environ.get("FEEDTEST_SFTP_URI")
-        path = os.environ.get("FEEDTEST_SFTP_PATH")
-        if not (uri and path):
-            raise unittest.SkipTest("No SFTP server available for testing")
-        st = SFTPFeedStorage(uri)
-        verifyObject(IFeedStorage, st)
-        return self._assert_stores(st, path)
 
-    @defer.inlineCallbacks
-    def _assert_stores(self, storage, path):
+class SFTPFeedStorageTest(TestCase):
+    def log_stderr(self):
+        try:
+            out, err = self.process.communicate(timeout=1)
+        except TimeoutExpired:
+            pass
+        else:
+            if err := err.decode():
+                for line in err.split("\n"):
+                    logger.error(f"SFTP server (stderr): {line}")
+
+    def setUp(self):
+        self.port = 2225
+        # self.port = randint(10000, 65535)
+        # self.process = Popen(
+        #     [sys.executable, "-um", "tests.sftpserver", "-p", str(self.port)],
+        #     stderr=PIPE,
+        # )
+        # self.log_stderr()
+
+    #
+    # def tearDown(self):
+    #     self.process.kill()
+    #     self.log_stderr()
+
+    @ensureDeferred
+    async def test_client(self):
+        from logging import getLogger
+
+        from paramiko import SFTPClient, Transport
+
+        logger = getLogger(__name__)
+
+        import paramiko
+
+        paramiko.util.log_to_file("paramiko.log")
+
+        transport = Transport(("localhost", 2225), strict_kex=False)
+        transport.connect(username="username", password="password")
+        logger.error(f"sftp = SFTPClient.from_transport({transport=})")
+        SFTPClient.from_transport(transport)
+
+    @ensureDeferred
+    async def test_store(self):
+        file_name = "file.txt"
+        crawler = get_crawler(spidercls=Spider)
+        storage = build_from_crawler(
+            SFTPFeedStorage,
+            crawler,
+            f"sftp://user:password@localhost:{self.port}/{file_name}",
+        )
+
+        verifyObject(IFeedStorage, storage)
+
+        path = Path(file_name)
         spider = Spider("default")
+        spider.crawler = crawler
+
         file = storage.open(spider)
         file.write(b"content")
-        yield storage.store(file)
-        self.assertTrue(os.path.exists(path))
-        with open(path, "rb") as fp:
+        await storage.store(file)
+        self.assertTrue(path.exists())
+        with path.open("rb") as fp:
             self.assertEqual(fp.read(), b"content")
+
         # again, to check files are overwritten
-        yield storage.store(BytesIO(b"new content"))
-        with open(path, "rb") as fp:
+        await storage.store(BytesIO(b"new content"))
+        with path.open("rb") as fp:
             self.assertEqual(fp.read(), b"new content")
