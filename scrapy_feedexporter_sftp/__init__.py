@@ -1,6 +1,6 @@
 from io import StringIO
 
-import paramiko
+from paramiko import RSAKey, SFTPClient, Transport
 from posixpath import dirname
 from six.moves.urllib.parse import urlparse, unquote_plus
 from scrapy.extensions.feedexport import BlockingFeedStorage
@@ -31,7 +31,7 @@ class SFTPFeedStorage(BlockingFeedStorage):
         self.password = unquote_plus(u.password or '') or None
         self.path = u.path
         if pkey := crawler.settings.get('FEED_STORAGE_SFTP_PKEY'):
-            pkey = paramiko.RSAKey.from_private_key(io.StringIO(pkey.strip()))
+            pkey = RSAKey.from_private_key(StringIO(pkey.strip()))
         self.pkey = pkey
 
     @classmethod
@@ -50,9 +50,9 @@ class SFTPFeedStorage(BlockingFeedStorage):
 
     def _store_in_thread(self, file):
         file.seek(0)
-        transport = paramiko.Transport((self.host, self.port))
+        transport = Transport((self.host, self.port))
         transport.connect(username=self.username, password=self.password, pkey=self.pkey)
-        sftp = paramiko.SFTPClient.from_transport(transport)
+        sftp = SFTPClient.from_transport(transport)
         sftp_makedirs(sftp, dirname(self.path))
         chunk_size = 1024 ** 2
         with sftp.file(self.path, "w") as f:
