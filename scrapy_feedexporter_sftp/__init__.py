@@ -1,6 +1,6 @@
-import io
-import paramiko
+from io import StringIO
 
+import paramiko
 from posixpath import dirname
 from six.moves.urllib.parse import urlparse, unquote_plus
 from scrapy.extensions.feedexport import BlockingFeedStorage
@@ -23,28 +23,34 @@ def sftp_makedirs(sftp, path):
 
 
 class SFTPFeedStorage(BlockingFeedStorage):
-    def __init__(self, uri, username=None, password=None, pkey=None):
+    def __init__(self, uri, feed_options=None, crawler=None):
         u = urlparse(uri)
         self.host = u.hostname
         self.port = int(u.port or "22")
-        self.username = unquote_plus(u.username or '') or username
-        self.password = unquote_plus(u.password or '') or password
-        self.pkey = pkey and paramiko.RSAKey.from_private_key(io.StringIO(pkey.strip()))
+        self.username = unquote_plus(u.username or '') or None
+        self.password = unquote_plus(u.password or '') or None
         self.path = u.path
+        if pkey := crawler.settings.get('FEED_STORAGE_SFTP_PKEY'):
+            pkey = paramiko.RSAKey.from_private_key(io.StringIO(pkey.strip()))
+        self.pkey = pkey
 
     @classmethod
-    def from_crawler(cls, crawler, uri):
+    def from_crawler(
+        cls,
+        crawler: Crawler,
+        uri: str,
+        *,
+        feed_options: dict[str, Any] | None = None,
+    ) -> Self:
         return cls(
             uri=uri,
-            username=crawler.settings.get('FEED_STORAGE_SFTP_USERNAME'),
-            password=crawler.settings.get('FEED_STORAGE_SFTP_PASSWORD'),
-            pkey=crawler.settings.get('FEED_STORAGE_SFTP_PKEY')
+            feed_options=feed_options,
+            crawler=crawler,
         )
 
     def _store_in_thread(self, file):
         file.seek(0)
         transport = paramiko.Transport((self.host, self.port))
-        # See: http://docs.paramiko.org/en/stable/api/transport.html#paramiko.transport.Transport.connect
         transport.connect(username=self.username, password=self.password, pkey=self.pkey)
         sftp = paramiko.SFTPClient.from_transport(transport)
         sftp_makedirs(sftp, dirname(self.path))

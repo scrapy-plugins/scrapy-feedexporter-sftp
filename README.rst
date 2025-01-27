@@ -27,6 +27,17 @@ Define your ``FEED_URI`` in Scrapy settings::
 
     FEED_URI = "sftp://user:password@some.server/some/path/to/a/file"
 
+To use a private key for authentication, use the ``FEED_STORAGE_SFTP_PKEY``
+setting::
+
+    FEED_STORAGE_SFTP_PKEY = """
+    -----BEGIN RSA PRIVATE KEY-----
+    ...
+    ... base64 encoded ...
+    ...
+    -----END RSA PRIVATE KEY-----
+    """
+
 Testing scrapy-feedexporter-sftp
 ================================
 
