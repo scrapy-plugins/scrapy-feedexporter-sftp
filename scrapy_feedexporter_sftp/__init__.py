@@ -1,7 +1,7 @@
 from posixpath import dirname
 from urllib.parse import unquote_plus, urlparse
 
-from paramiko import AutoAddPolicy, SFTPClient, Transport
+from paramiko import SFTPClient, Transport
 from scrapy.extensions.feedexport import BlockingFeedStorage
 
 
@@ -32,20 +32,10 @@ class SFTPFeedStorage(BlockingFeedStorage):
 
     def _store_in_thread(self, file):
         file.seek(0)
-
-        from logging import getLogger
-
-        logger = getLogger(__name__)
         transport = Transport((self.host, self.port))
-        logger.error(f"Transport(({self.host=}, {self.port=}))")
         transport.connect(username=self.username, password=self.password)
-        logger.error(
-            f"transport.connect(username={self.username=}, password={self.password=})"
-        )
-        logger.error(f"sftp = SFTPClient.from_transport({transport=})")
         sftp = SFTPClient.from_transport(transport)
 
-        raise ValueError("foo")
         sftp_makedirs(sftp, dirname(self.path))
         chunk_size = 1024**2
         with sftp.file(self.path, "w") as f:

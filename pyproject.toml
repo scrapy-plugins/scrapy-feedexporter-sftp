@@ -163,5 +163,8 @@ ignore = [
     "SIM300",
 ]
 
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S"]
+
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"
