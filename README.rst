@@ -19,10 +19,27 @@ that allows you to export `Scrapy items
 Using scrapy-feedexporter-sftp
 ==============================
 
-Add a ``FEED_STORAGES`` to your Scrapy settings::
+Add a ``FEED_STORAGES`` to your Scrapy settings:
+
+.. code-block:: python
 
     FEED_STORAGES = {"sftp": "scrapy_feedexporter_sftp.SFTPFeedStorage"}
 
-Define your ``FEED_URI`` in Scrapy settings::
+Define your ``FEED_URI`` in Scrapy settings:
+
+.. code-block:: python
 
     FEED_URI = "sftp://user:password@some.server/some/path/to/a/file"
+
+To use a private key for authentication, use the ``FEED_STORAGE_SFTP_PKEY``
+setting:
+
+.. code-block:: python
+
+    FEED_STORAGE_SFTP_PKEY = """
+    -----BEGIN RSA PRIVATE KEY-----
+    ...
+    ... base64 encoded ...
+    ...
+    -----END RSA PRIVATE KEY-----
+    """

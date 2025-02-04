@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 from paramiko import (
+    AUTH_FAILED,
     AUTH_SUCCESSFUL,
     OPEN_SUCCEEDED,
     RSAKey,
@@ -15,7 +16,9 @@ from paramiko import (
     Transport,
 )
 
-ROOT = Path(__file__).parent / "fs"
+TESTS_DIR = Path(__file__).parent
+GOOD_KEY = RSAKey.from_private_key((TESTS_DIR / "good_key").open())
+ROOT = TESTS_DIR / "fs"
 
 
 class CustomSFTPServer(SFTPServerInterface):
@@ -58,13 +61,20 @@ class CustomSFTPServer(SFTPServerInterface):
 
 class CustomServer(ServerInterface):
     def check_auth_password(self, username, password):
-        return AUTH_SUCCESSFUL
+        if username == "username" and password == "password":
+            return AUTH_SUCCESSFUL
+        return AUTH_FAILED
+
+    def check_auth_publickey(self, username, key):
+        if username == "username" and key == GOOD_KEY:
+            return AUTH_SUCCESSFUL
+        return AUTH_FAILED
 
     def check_channel_request(self, kind, chanid):
         return OPEN_SUCCEEDED
 
     def get_allowed_auths(self, username):
-        return "password"
+        return "publickey,password"
 
 
 def setup_transport(connection):
@@ -88,7 +98,10 @@ def main():
     channels = []
     while True:
         connection, _ = server_socket.accept()
-        transport = setup_transport(connection)
+        try:
+            transport = setup_transport(connection)
+        except EOFError:
+            continue
         channel = transport.accept()
         if not channel:
             continue
