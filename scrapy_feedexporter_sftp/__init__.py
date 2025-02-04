@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from io import StringIO
 from posixpath import dirname
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any
 from urllib.parse import unquote_plus, urlparse
 
 from paramiko import RSAKey, SFTPClient, Transport
@@ -10,6 +10,11 @@ from scrapy.extensions.feedexport import BlockingFeedStorage
 
 if TYPE_CHECKING:
     from scrapy.crawler import Crawler
+
+    try:
+        from typing import Self
+    except ImportError:
+        from typing_extensions import Self
 
 
 def sftp_makedirs(sftp, path):
