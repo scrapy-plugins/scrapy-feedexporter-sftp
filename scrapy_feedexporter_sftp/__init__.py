@@ -1,7 +1,7 @@
-import paramiko
-
 from posixpath import dirname
-from six.moves.urllib.parse import urlparse, unquote_plus
+from urllib.parse import unquote_plus, urlparse
+
+from paramiko import SFTPClient, Transport
 from scrapy.extensions.feedexport import BlockingFeedStorage
 
 
@@ -14,7 +14,7 @@ def sftp_makedirs(sftp, path):
     cwd = sftp.getcwd()  # Remember the current working dir
     try:
         sftp.chdir(path)
-    except IOError:
+    except OSError:
         # Directory `path` does not exist yet.
         sftp_makedirs(sftp, dirname(path))  # Make parent directories
         sftp.mkdir(path)  # Make directory
@@ -32,11 +32,12 @@ class SFTPFeedStorage(BlockingFeedStorage):
 
     def _store_in_thread(self, file):
         file.seek(0)
-        transport = paramiko.Transport((self.host, self.port))
+        transport = Transport((self.host, self.port))
         transport.connect(username=self.username, password=self.password)
-        sftp = paramiko.SFTPClient.from_transport(transport)
+        sftp = SFTPClient.from_transport(transport)
+
         sftp_makedirs(sftp, dirname(self.path))
-        chunk_size = 1024 ** 2
+        chunk_size = 1024**2
         with sftp.file(self.path, "w") as f:
             while True:
                 data = file.read(chunk_size)
