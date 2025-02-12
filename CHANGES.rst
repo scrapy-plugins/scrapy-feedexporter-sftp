@@ -2,7 +2,7 @@
 scrapy-feedexporter-sftp changelog
 ==================================
 
-1.1.0 (unreleased)
+1.1.0 (2025-02-12)
 ==================
 
 -   Dropped support for Python 3.8 and lower, added support for Python 3.9 and
